@@ -29,7 +29,5 @@ yarn install
 
 ## Necesitati
 
-Instalare postgres
-Instalare Docker
-
-Rulare `postinstall`
+1. Instalare [Docker](https://docs.docker.com/engine/install/)
+2. Rulare `postinstall`
