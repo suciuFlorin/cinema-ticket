@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+  // Further reading:
+  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+  url      = env("DATABASE_URL")
+}
+
+model Proprietate {
+  id           Int         @id @default(autoincrement())
+  nume         String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  SalaCinema   SalaCinema? @relation(fields: [salaCinemaId], references: [id])
+  salaCinemaId Int?
+
+  @@index([nume])
+}
+
+model Film {
+  id             Int         @id @default(autoincrement())
+  nume           String      @default("Film")
+  dataLansare    DateTime?
+  ora            DateTime?
+  dataProiectare DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  Rezervare      Rezervare[]
+
+  @@index([nume])
+}
+
+model Loc {
+  id            Int        @id @default(autoincrement())
+  numar         Int        @default(0)
+  coloana       String     @default("A")
+  latime        Int        @default(0)
+  lungime       Int        @default(0)
+  sala          SalaCinema @relation(fields: [apartineSalii], references: [id])
+  apartineSalii Int
+  x             Int        @default(0)
+  y             Int        @default(0)
+  z             Int        @default(0)
+  esteRezervat  Boolean    @default(false)
+  esteCumparat  Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  Rezervare     Rezervare? @relation(fields: [rezervareId], references: [id])
+  rezervareId   Int?
+  Bilet         Bilet[]
+
+  @@index([id])
+}
+
+model Rezervare {
+  id            Int      @id @default(autoincrement())
+  film          Film     @relation(fields: [idFilm], references: [id])
+  idFilm        Int
+  locuri        Loc[]
+  esteConfirmat Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+
+  @@index([id])
+}
+
+model Bilet {
+  id        Int      @id @default(autoincrement())
+  loc       Loc      @relation(fields: [idLoc], references: [id])
+  idLoc     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+
+  @@index([id])
+}
+
+model SalaCinema {
+  id           Int           @id @default(autoincrement())
+  nume         String
+  numarLocuri  Int
+  latime       Int
+  lungime      Int
+  inaltime     Int
+  proprietati  Proprietate[]
+  locuri       Loc[]
+  eDisponibila Boolean
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([nume])
+}
+
+// Necessary for Next auth
+model Account {
+  id                       String  @id @default(cuid())
+  userId                   String
+  type                     String
+  provider                 String
+  providerAccountId        String
+  refresh_token            String? // @db.Text
+  access_token             String? // @db.Text
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String? // @db.Text
+  session_state            String?
+  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refresh_token_expires_in Int?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String      @id @default(cuid())
+  name          String?
+  email         String?     @unique
+  emailVerified DateTime?
+  isAdmin       Boolean     @default(false)
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  rezervari     Rezervare[]
+  Bilet         Bilet[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
