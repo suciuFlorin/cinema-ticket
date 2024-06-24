@@ -11,60 +11,78 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Proprietate {
+enum Role {
+  USER
+  ADMIN
+}
+
+model CinemaLocation {
+  id          Int          @id @default(autoincrement())
+  name        String
+  description String?
+  street      String
+  city        String
+  country     String
+  locationUrl String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  rooms       CinemaRoom[]
+
+  @@index([name])
+}
+
+model SpecialProperty {
   id           Int         @id @default(autoincrement())
-  nume         String
+  name         String      @unique
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-  SalaCinema   SalaCinema? @relation(fields: [salaCinemaId], references: [id])
-  salaCinemaId Int?
+  CinemaRoom   CinemaRoom? @relation(fields: [cinemaRoomId], references: [id])
+  cinemaRoomId Int?
 
-  @@index([nume])
+  @@index([name])
 }
 
-model Film {
-  id             Int         @id @default(autoincrement())
-  nume           String      @default("Film")
-  dataLansare    DateTime?
-  ora            DateTime?
-  dataProiectare DateTime?
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  Rezervare      Rezervare[]
+model Movie {
+  id         Int       @id @default(autoincrement())
+  name       String    @default("Movie")
+  launchDate DateTime?
+  posterURL  String
 
-  @@index([nume])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([name])
 }
 
-model Loc {
-  id            Int        @id @default(autoincrement())
-  numar         Int        @default(0)
-  coloana       String     @default("A")
-  latime        Int        @default(0)
-  lungime       Int        @default(0)
-  sala          SalaCinema @relation(fields: [apartineSalii], references: [id])
-  apartineSalii Int
-  x             Int        @default(0)
-  y             Int        @default(0)
-  z             Int        @default(0)
-  esteRezervat  Boolean    @default(false)
-  esteCumparat  Boolean    @default(false)
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  Rezervare     Rezervare? @relation(fields: [rezervareId], references: [id])
-  rezervareId   Int?
-  Bilet         Bilet[]
+model Seat {
+  id          Int           @id @default(autoincrement())
+  number      Int           @default(0)
+  column      String        @default("A")
+  width       Int           @default(0)
+  length      Int           @default(0)
+  height      Int           @default(0)
+  cinemaRoom  CinemaRoom    @relation(fields: [belongsTo], references: [id])
+  belongsTo   Int
+  x           Int           @default(0)
+  y           Int           @default(0)
+  z           Int           @default(0)
+  isReserved  Boolean       @default(false)
+  isBought    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  Reservation Reservation[]
+  Ticket      Ticket[]
 
   @@index([id])
 }
 
-model Rezervare {
-  id            Int      @id @default(autoincrement())
-  film          Film     @relation(fields: [idFilm], references: [id])
-  idFilm        Int
-  locuri        Loc[]
-  esteConfirmat Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+model Reservation {
+  id          Int      @id @default(autoincrement())
+  seat        Seat     @relation(fields: [seatId], references: [id])
+  seatId      Int
+  isConfirmed Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   createdBy   User   @relation(fields: [createdById], references: [id])
   createdById String
@@ -72,10 +90,10 @@ model Rezervare {
   @@index([id])
 }
 
-model Bilet {
+model Ticket {
   id        Int      @id @default(autoincrement())
-  loc       Loc      @relation(fields: [idLoc], references: [id])
-  idLoc     Int
+  seat      Seat     @relation(fields: [seatId], references: [id])
+  seatId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -85,20 +103,22 @@ model Bilet {
   @@index([id])
 }
 
-model SalaCinema {
-  id           Int           @id @default(autoincrement())
-  nume         String
-  numarLocuri  Int
-  latime       Int
-  lungime      Int
-  inaltime     Int
-  proprietati  Proprietate[]
-  locuri       Loc[]
-  eDisponibila Boolean
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+model CinemaRoom {
+  id                Int               @id @default(autoincrement())
+  name              String
+  numberOfSeats     Int
+  width             Int
+  length            Int
+  height            Int
+  specialProperties SpecialProperty[]
+  seats             Seat[]
+  isAvailable       Boolean
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  CinemaLocation    CinemaLocation?   @relation(fields: [cinemaLocationId], references: [id])
+  cinemaLocationId  Int?
 
-  @@index([nume])
+  @@index([name])
 }
 
 // Necessary for Next auth
@@ -130,16 +150,24 @@ model Session {
 }
 
 model User {
-  id            String      @id @default(cuid())
+  id            String        @id @default(cuid())
   name          String?
-  email         String?     @unique
+  username      String?       @unique
+  email         String?       @unique
   emailVerified DateTime?
-  isAdmin       Boolean     @default(false)
+  role          Role          @default(USER)
   image         String?
   accounts      Account[]
   sessions      Session[]
-  rezervari     Rezervare[]
-  Bilet         Bilet[]
+  reservations  Reservation[]
+  tickets       Ticket[]
+  Password      Password?
+}
+
+model Password {
+  hash   String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @unique
 }
 
 model VerificationToken {

@@ -1,24 +1,26 @@
 import "@base/styles/globals.css";
 
 import { GeistSans } from "geist/font/sans";
-
 import { TRPCReactProvider } from "@base/trpc/react";
+import { COMPANY_LOGO, COMPANY_NAME } from "../../constants/Company";
+import Header from "@base/app/_components/Header";
 
 export const metadata = {
-  title: "Cinema Ticket",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  title: COMPANY_NAME,
+  icons: [{ rel: "icon", url: COMPANY_LOGO || "/favicon.ico" }],
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${GeistSans.variable}`}>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider>
+          <Header />
+          {children}
+        </TRPCReactProvider>
       </body>
     </html>
   );
 }
+
+export default RootLayout;
