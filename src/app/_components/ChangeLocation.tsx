@@ -16,7 +16,7 @@ const ChangeLocation = () => {
 
   const locationLogo = currentLocation.logo;
   const handleLocationChange = (path: string) => {
-    router.push(`/${path}`);
+    router.push(path);
   };
 
   return (
